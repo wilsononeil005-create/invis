@@ -1,24 +1,19 @@
--- This script should be placed in a LocalScript within StarterPlayerScripts or StarterCharacterScripts
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 
 local function toggleInvisibility()
-    local isInvisible = false
+    if character and character:FindFirstChild("Humanoid") then
+        local isVisible = character.HumanoidRootPart.Transparency == 0
 
-    -- Toggle the transparency of each part in the character
-    for _, part in ipairs(character:GetDescendants()) do
-        if part:IsA("BasePart") then
-            if part.Transparency == 0 then
-                part.Transparency = 1 -- Fully invisible
-                isInvisible = true
-            else
-                part.Transparency = 0 -- Fully visible
-                isInvisible = false
+        for _, part in pairs(character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.Transparency = isVisible and 1 or 0
             end
         end
-    end
 
-    -- Optional: You can add logic to change the button text based on invisibility state
+        -- Optionally, you can also toggle the humanoid's visibility (for effects)
+        character.HumanoidRootPart.LocalTransparencyModifier = isVisible and 1 or 0
+    end
 end
 
 -- Create a GUI button to toggle invisibility
@@ -26,21 +21,51 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "InvisibilityGui"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
+local guiFrame = Instance.new("Frame")
+guiFrame.Size = UDim2.new(0, 200, 0, 150)
+guiFrame.Position = UDim2.new(0.5, -100, 0.5, -100)
+guiFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+guiFrame.BorderSizePixel = 0
+guiFrame.Parent = screenGui
+
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0, 200, 0, 50)
-toggleButton.Position = UDim2.new(0.5, -100, 0.5, -25)
+toggleButton.Position = UDim2.new(0, 0, 0, 10)
 toggleButton.Text = "Toggle Invisibility"
-toggleButton.Parent = screenGui
+toggleButton.Parent = guiFrame
 
 toggleButton.MouseButton1Click:Connect(toggleInvisibility)
 
 -- Create a collapsible button
 local collapsibleButton = Instance.new("TextButton")
 collapsibleButton.Size = UDim2.new(0, 200, 0, 50)
-collapsibleButton.Position = UDim2.new(0.5, -100, 0.5, -75)
+collapsibleButton.Position = UDim2.new(0, 0, 0, 70)
 collapsibleButton.Text = "Collapse GUI"
-collapsibleButton.Parent = screenGui
+collapsibleButton.Parent = guiFrame
 
 collapsibleButton.MouseButton1Click:Connect(function()
-    screenGui.Visible = not screenGui.Visible
+    guiFrame.Visible = not guiFrame.Visible
 end)
+
+-- Make the GUI movable
+local moveGui = false
+local startPos
+local startGuiPos
+
+guiFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        moveGui = true
+        startPos = input.Position
+        startGuiPos = guiFrame.Position
+    end
+end)
+
+guiFrame.InputChanged:Connect(function(input)
+    if moveGui and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - startPos
+        guiFrame.Position = startGuiPos + UDim2.new(0, delta.X, 0, delta.Y)
+    end
+end)
+
+guiFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.User
