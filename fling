@@ -1,0 +1,66 @@
+local player = game.Players.LocalPlayer
+local screenGui = Instance.new("ScreenGui", player.PlayerGui)
+local toggle = Instance.new("TextButton", screenGui)
+
+toggle.Text = "Fling Enabled"
+toggle.Size = UDim2.new(0, 100, 0, 50)
+toggle.BackgroundTransparency = 0.8
+toggle.TextColor3 = Color3.new(1, 1, 1)
+toggle.TextSize = 18
+toggle.TextStrokeTransparency = 0.5
+toggle.TextStrokeColor3 = Color3.new(0, 0, 0)
+toggle.Position = UDim2.new(0, 10, 0, 10)
+toggle.AutoButtonColor = false
+
+local userInputService = game:GetService("UserInputService")
+local runService = game:GetService("RunService")
+local isMobile = userInputService.TouchEnabled
+local flingEnabled = true
+
+if isMobile then
+    toggle.Size = UDim2.new(0, 50, 0, 30)
+    toggle.Position = UDim2.new(0, 10, 0, screenGui.AbsoluteSize.Y - toggle.AbsoluteSize.Y - 10)
+
+    local doubleTap = false
+    local tapCount = 0
+
+    runService.RenderStepped:Connect(function()
+        if userInputService:IsTouchInputActive() then
+            if userInputService.TouchAccuracy < 1 then
+                tapCount = tapCount + 1
+            else
+                tapCount = 0
+            end
+
+            if tapCount >= 2 and not doubleTap then
+                doubleTap = true
+                toggleText()
+            elseif tapCount == 0 then
+                doubleTap = false
+            end
+        end
+    end)
+end
+
+local function toggleText()
+    flingEnabled = not flingEnabled
+    toggle.Text = flingEnabled and "Fling Enabled" or "Fling Disabled"
+end
+
+toggle.MouseButton1Click:Connect(function()
+    toggleText()
+end)
+
+player.CharacterAdded:Connect(function(character)
+    character.Touched:Connect(function(hit)
+        local touchedPlayer = hit.Parent:FindFirstChild("Humanoid")
+        if touchedPlayer and touchedPlayer.Parent ~= character and flingEnabled then
+            local force = 500000
+            local humanoidRootPart = touchedPlayer.Parent:FindFirstChild("HumanoidRootPart")
+            if humanoidRootPart then
+                humanoidRootPart.CFrame = CFrame.new(0, 0, -force) * humanoidRootPart.CFrame
+            end
+        end
+    end)
+end)
+
